@@ -1,0 +1,64 @@
+<Window x:Class="TronIPTV.Views.SourceDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TronIPTV — Playlist" Icon="/Assets/app.ico" Width="520" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{StaticResource Panel}" Foreground="{StaticResource Text}" FontFamily="{StaticResource UiFont}" FontSize="13" TextOptions.TextFormattingMode="Ideal">
+    <StackPanel Margin="20">
+        <TextBlock x:Name="Heading" Text="Add playlist" FontSize="18" FontWeight="SemiBold" />
+
+        <TextBlock Style="{StaticResource SectionLabel}" Text="Type" />
+        <StackPanel Orientation="Horizontal">
+            <RadioButton x:Name="KindXtream" Style="{StaticResource OptionRadio}" Content="Xtream Codes" GroupName="Kind" Checked="Kind_Checked" />
+            <RadioButton x:Name="KindM3uUrl" Style="{StaticResource OptionRadio}" Content="M3U URL" GroupName="Kind" Checked="Kind_Checked" />
+            <RadioButton x:Name="KindM3uFile" Style="{StaticResource OptionRadio}" Content="M3U file" GroupName="Kind" Checked="Kind_Checked" />
+        </StackPanel>
+
+        <TextBlock Style="{StaticResource SectionLabel}" Text="Name" />
+        <TextBox x:Name="NameBox" />
+
+        <TextBlock x:Name="UrlLabel" Style="{StaticResource SectionLabel}" Text="Server URL" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="UrlBox" />
+            <Button x:Name="BrowseButton" Grid.Column="1" Content="Browse…" Margin="8,0,0,0" Click="Browse_Click" />
+        </Grid>
+        <TextBlock x:Name="UrlHint" Foreground="{StaticResource Subtle}" FontSize="11.5" Margin="0,4,0,0" TextWrapping="Wrap" />
+
+        <StackPanel x:Name="XtreamPanel">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionLabel}" Text="Username" />
+                    <TextBox x:Name="UserBox" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Style="{StaticResource SectionLabel}" Text="Password" />
+                    <PasswordBox x:Name="PasswordBox" />
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <TextBlock Style="{StaticResource SectionLabel}" Text="TV guide (XMLTV) URL — optional" />
+        <TextBox x:Name="EpgBox" />
+        <TextBlock x:Name="EpgHint" Foreground="{StaticResource Subtle}" FontSize="11.5" Margin="0,4,0,0" TextWrapping="Wrap"
+                   Text="Leave empty to use the guide advertised by the playlist or provider. .xml and .xml.gz are supported." />
+
+        <TextBlock Style="{StaticResource SectionLabel}" Text="User-Agent — optional" />
+        <TextBox x:Name="UserAgentBox" />
+
+        <TextBlock x:Name="ErrorText" Foreground="{StaticResource Danger}" Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Cancel" IsCancel="True" MinWidth="90" />
+            <Button Content="Save" IsDefault="True" Style="{StaticResource PrimaryButton}" MinWidth="90" Margin="8,0,0,0" Click="Save_Click" />
+        </StackPanel>
+    </StackPanel>
+</Window>
