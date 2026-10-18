@@ -1,0 +1,26 @@
+<Project>
+
+  <!-- Central package management: every NuGet version lives here. Dependabot updates this file. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup Label="Application">
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageVersion Include="LibVLCSharp.WPF" Version="3.10.2" />
+    <PackageVersion Include="VideoLAN.LibVLC.Windows" Version="3.0.24" />
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup Label="Build">
+    <PackageVersion Include="MinVer" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Tests">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
+  </ItemGroup>
+
+</Project>

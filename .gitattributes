@@ -1,0 +1,17 @@
+# Normalize text files in the repository; check out with the platform default.
+* text=auto
+
+*.cs      text diff=csharp
+*.xaml    text
+*.csproj  text
+*.props   text
+*.sln     text eol=crlf
+*.ps1     text eol=crlf
+*.iss     text eol=crlf
+*.sh      text eol=lf
+*.yml     text eol=lf
+*.md      text
+
+*.png     binary
+*.ico     binary
+*.jpg     binary

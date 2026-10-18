@@ -1,0 +1,41 @@
+<Project>
+
+  <!-- Shared settings for every project in the repository. -->
+  <PropertyGroup>
+    <!-- Override with -p:TronTargetFramework=net8.0 to compile on an older SDK; releases always use .NET 10. -->
+    <TronTargetFramework Condition="'$(TronTargetFramework)' == ''">net10.0</TronTargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- Product metadata stamped into every assembly. -->
+  <PropertyGroup>
+    <Product>TronIPTV</Product>
+    <Company>TronIPTV contributors</Company>
+    <Authors>TronIPTV contributors</Authors>
+    <Copyright>Copyright © 2026 TronIPTV contributors</Copyright>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/armendzekjiri/TronIPTV</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/armendzekjiri/TronIPTV</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <!-- Versioning: MinVer derives SemVer from the latest "v*" git tag (v0.1.0 -> 0.1.0). -->
+  <PropertyGroup>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerDefaultPreReleaseIdentifiers>alpha.0</MinVerDefaultPreReleaseIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
