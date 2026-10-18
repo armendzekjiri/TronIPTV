@@ -1,0 +1,125 @@
+name: Release
+
+# Pushing a SemVer tag (v1.2.3 or v1.2.3-rc.1) builds, packages and publishes a GitHub release.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+
+permissions:
+  contents: write      # create the release
+  id-token: write      # build provenance attestation
+  attestations: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $version = $tag.Substring(1)
+          # 0.x versions and SemVer pre-release tags are published as GitHub pre-releases.
+          $prerelease = ($version -match '-') -or $version.StartsWith('0.')
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "numeric=$(($version -split '-')[0])" >> $env:GITHUB_OUTPUT
+          "prerelease=$($prerelease.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      - name: Test
+        run: dotnet test TronIPTV.sln --configuration Release
+
+      - name: Publish (win-x64, self-contained, ReadyToRun)
+        run: >
+          dotnet publish src/TronIPTV/TronIPTV.csproj --configuration Release
+          --runtime win-x64 --self-contained -p:PublishReadyToRun=true
+          --output artifacts/publish
+
+      - name: Verify version stamp
+        shell: pwsh
+        run: |
+          $actual = (Get-Item artifacts/publish/TronIPTV.exe).VersionInfo.ProductVersion
+          $expected = '${{ steps.version.outputs.version }}'
+          if (-not $actual.StartsWith($expected)) { throw "TronIPTV.exe reports '$actual', expected '$expected'." }
+          Write-Host "TronIPTV.exe version $actual"
+
+      - name: Package portable zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts/dist | Out-Null
+          Copy-Item LICENSE, THIRD-PARTY-NOTICES.md artifacts/publish/
+          Compress-Archive -Path artifacts/publish/* -DestinationPath "artifacts/dist/TronIPTV-${{ steps.version.outputs.version }}-win-x64-portable.zip"
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          & $iscc /Q "/DAppVersion=${{ steps.version.outputs.version }}" "/DAppNumericVersion=${{ steps.version.outputs.numeric }}" installer/TronIPTV.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
+
+      - name: Checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem artifacts/dist -File | Where-Object Name -ne 'SHA256SUMS.txt' | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)"
+          } | Set-Content -Encoding ascii artifacts/dist/SHA256SUMS.txt
+          Get-Content artifacts/dist/SHA256SUMS.txt
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'artifacts/dist/*'
+
+      - name: Release notes from CHANGELOG
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $lines = Get-Content CHANGELOG.md
+          $start = ($lines | Select-String -Pattern "^## \[$([regex]::Escape($version))\]" | Select-Object -First 1).LineNumber
+          if ($start) {
+            $rest = $lines[$start..($lines.Length - 1)]
+            $end = ($rest | Select-String -Pattern '^## \[' | Select-Object -First 1).LineNumber
+            $section = if ($end) { $rest[0..($end - 2)] } else { $rest }
+          } else {
+            $section = @('See the commit history for changes in this release.')
+          }
+          $footer = @(
+            '',
+            '---',
+            '**Downloads:** `*-setup.exe` installs TronIPTV (no admin rights needed); the `*-portable.zip` runs from any folder.',
+            'Verify downloads with `SHA256SUMS.txt` or `gh attestation verify <file> --repo ${{ github.repository }}`.'
+          )
+          ($section + $footer) | Set-Content -Encoding utf8 artifacts/release-notes.md
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # PowerShell does not expand wildcards for native commands, so list the assets explicitly.
+          $assets = (Get-ChildItem artifacts/dist -File).FullName
+          $ghArgs = @('release', 'create', '${{ steps.version.outputs.tag }}') + $assets + @(
+                    '--title', 'TronIPTV ${{ steps.version.outputs.version }}',
+                    '--notes-file', 'artifacts/release-notes.md', '--verify-tag')
+          if ('${{ steps.version.outputs.prerelease }}' -eq 'true') { $ghArgs += '--prerelease' }
+          gh @ghArgs
