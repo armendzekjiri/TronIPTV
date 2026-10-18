@@ -37,6 +37,32 @@
 
 ## Install
 
+### winget
+
+> Available once the first submission to [winget-pkgs](https://github.com/microsoft/winget-pkgs) is accepted.
+
+```bash
+winget install TronIPTV
+```
+
+This installs the per-user setup; `winget upgrade TronIPTV` updates it. The package ID is `ArmendZekjiri.TronIPTV`.
+
+### Scoop
+
+The Scoop bucket lives in this repository:
+
+```bash
+scoop bucket add tron-iptv https://github.com/armendzekjiri/TronIPTV
+```
+
+```bash
+scoop install tron-iptv
+```
+
+This installs the portable build; `scoop update tron-iptv` updates it.
+
+### Manual download
+
 Download the latest release from the [Releases page](https://github.com/armendzekjiri/TronIPTV/releases):
 
 | File | Use it when |

@@ -1,0 +1,32 @@
+{
+    "version": "0.1.0",
+    "description": "A fast, modern, open-source IPTV player for Windows (Xtream Codes, M3U, XMLTV).",
+    "homepage": "https://github.com/armendzekjiri/TronIPTV",
+    "license": "GPL-3.0-or-later",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/armendzekjiri/TronIPTV/releases/download/v0.1.0/TronIPTV-0.1.0-win-x64-portable.zip",
+            "hash": "8d6ba33034118b4853949d8486ce544962b420ab4b5ea1991453db3bdc3aa144"
+        }
+    },
+    "shortcuts": [
+        [
+            "TronIPTV.exe",
+            "TronIPTV"
+        ]
+    ],
+    "checkver": {
+        "url": "https://api.github.com/repos/armendzekjiri/TronIPTV/releases",
+        "regex": "\"tag_name\":\\s*\"v([\\d.]+)\""
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/armendzekjiri/TronIPTV/releases/download/v$version/TronIPTV-$version-win-x64-portable.zip",
+                "hash": {
+                    "url": "$baseurl/SHA256SUMS.txt"
+                }
+            }
+        }
+    }
+}

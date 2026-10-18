@@ -19,6 +19,10 @@ jobs:
     name: Build and publish release
     runs-on: windows-latest
     timeout-minutes: 45
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -125,3 +129,78 @@ jobs:
                     '--notes-file', 'artifacts/release-notes.md', '--verify-tag')
           if ('${{ steps.version.outputs.prerelease }}' -eq 'true') { $ghArgs += '--prerelease' }
           gh @ghArgs
+
+  winget:
+    name: Submit to winget
+    needs: release
+    # winget moderators prefer stable versions, so GitHub pre-releases (0.x and -suffix tags)
+    # are only submitted when the WINGET_INCLUDE_PRERELEASES repository variable is 'true'.
+    if: needs.release.outputs.prerelease != 'true' || vars.WINGET_INCLUDE_PRERELEASES == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+    steps:
+      - name: Skip without WINGET_TOKEN
+        if: env.WINGET_TOKEN == ''
+        run: echo "::notice title=winget submission skipped::No WINGET_TOKEN secret is configured. See CONTRIBUTING.md, section 'Package managers'."
+
+      # Opens a pull request in microsoft/winget-pkgs from the token owner's fork, using the
+      # previous ArmendZekjiri.TronIPTV manifest as the base. The first version must be submitted by hand.
+      - name: Submit manifest to microsoft/winget-pkgs
+        if: env.WINGET_TOKEN != ''
+        uses: vedantmgoyal9/winget-releaser@b7370d4d152efdce803a26cc6ca9eee58cb2ad54 # v2
+        with:
+          identifier: ArmendZekjiri.TronIPTV
+          release-tag: ${{ needs.release.outputs.tag }}
+          installers-regex: '-win-x64-setup\.exe$'
+          release-notes-url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.release.outputs.tag }}
+          token: ${{ env.WINGET_TOKEN }}
+
+  scoop:
+    name: Update Scoop manifest
+    needs: release
+    # Matches the manifest's checkver, which skips SemVer pre-release tags (v1.0.0-rc.1) but follows 0.x releases.
+    if: ${{ !contains(needs.release.outputs.version, '-') }}
+    runs-on: windows-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # push the manifest bump to main
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Checkout Scoop
+        uses: actions/checkout@v5
+        with:
+          repository: ScoopInstaller/Scoop
+          ref: e6aa3b366bdee8ed138c1e0f7b85192ebdd35d0f # v0.6.0
+          path: .scoop
+          persist-credentials: false
+
+      # Scoop's own autoupdate fills in the URL and reads the hash from the release's SHA256SUMS.txt,
+      # so bucket/tron-iptv.json stays the single definition of how a release maps to the manifest.
+      - name: Update bucket/tron-iptv.json
+        shell: powershell
+        run: |
+          $version = '${{ needs.release.outputs.version }}'
+          .scoop/bin/checkver.ps1 -App tron-iptv -Dir bucket -Update -Version $version -ThrowError
+          $manifest = Get-Content bucket/tron-iptv.json -Raw | ConvertFrom-Json
+          if ($manifest.version -ne $version) { throw "bucket/tron-iptv.json is at '$($manifest.version)', expected '$version'." }
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          if git diff --quiet -- bucket/tron-iptv.json; then
+            echo "bucket/tron-iptv.json is already at ${{ needs.release.outputs.version }}."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "chore(scoop): update tron-iptv to ${{ needs.release.outputs.version }}" -- bucket/tron-iptv.json
+          git pull --rebase origin main
+          git push origin HEAD:main

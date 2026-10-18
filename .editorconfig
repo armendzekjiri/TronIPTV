@@ -11,6 +11,10 @@ trim_trailing_whitespace = true
 [*.{json,yml,yaml}]
 indent_size = 2
 
+# Scoop's checkver rewrites manifests with 4-space indents; match it so release bumps stay one-line diffs.
+[bucket/*.json]
+indent_size = 4
+
 [*.md]
 trim_trailing_whitespace = false
 
