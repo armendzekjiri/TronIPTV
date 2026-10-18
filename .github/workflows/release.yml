@@ -80,9 +80,11 @@ jobs:
       - name: Checksums
         shell: pwsh
         run: |
-          Get-ChildItem artifacts/dist -File | Where-Object Name -ne 'SHA256SUMS.txt' | ForEach-Object {
+          $lines = Get-ChildItem artifacts/dist -File | Where-Object Name -ne 'SHA256SUMS.txt' | ForEach-Object {
             "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)"
-          } | Set-Content -Encoding ascii artifacts/dist/SHA256SUMS.txt
+          }
+          # LF line endings so `sha256sum -c SHA256SUMS.txt` works on Linux, macOS and Git Bash.
+          [IO.File]::WriteAllText((Join-Path $PWD 'artifacts/dist/SHA256SUMS.txt'), (($lines -join "`n") + "`n"))
           Get-Content artifacts/dist/SHA256SUMS.txt
 
       - name: Attest build provenance
