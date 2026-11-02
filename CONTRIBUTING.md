@@ -28,6 +28,8 @@ Set `TRONIPTV_DATA_DIR` to a scratch folder while developing, so your real setti
 | `src/TronIPTV` | The WPF app: view models (CommunityToolkit.Mvvm), libVLC player wrapper, views, and the theme in `Themes/Dark.xaml`. |
 | `tests/TronIPTV.Core.Tests` | xUnit tests for the core library. |
 | `installer/` | Inno Setup script used by the release workflow. |
+| `bucket/` | Scoop manifest, so this repository doubles as the `tron-iptv` Scoop bucket. |
+| `packaging/winget/` | Seed manifests for the first winget-pkgs submission. Later versions are generated from winget-pkgs itself. |
 | `.github/workflows/` | CI, CodeQL, PR title check, and release automation. |
 
 Build settings shared by every project live in `Directory.Build.props`. NuGet versions are managed centrally in `Directory.Packages.props`, so never put a `Version` on a `PackageReference`.
@@ -78,6 +80,35 @@ To publish a release (maintainers):
    - creates the GitHub release with notes from the changelog.
 
    `0.x` versions and tags with a pre-release suffix (`v1.0.0-rc.1`) are published as pre-releases.
+
+4. After the GitHub release exists, two more jobs update the package managers (see below).
+
+### Package managers
+
+**Scoop** needs no setup. The bucket is [`bucket/tron-iptv.json`](bucket/tron-iptv.json) in this repository. For every release without a pre-release suffix (including `0.x`), the `scoop` job runs Scoop's own `checkver.ps1 -Update` against the new version. That fills in the zip URL and takes the hash from the release's `SHA256SUMS.txt`, then commits the change to `main` as `github-actions[bot]`. If `main` gets branch protection that blocks direct pushes, allow GitHub Actions to bypass it, or the job will fail after the release is already published. To bump the manifest by hand (for example to retry a failed job), clone [ScoopInstaller/Scoop](https://github.com/ScoopInstaller/Scoop) and run:
+
+```powershell
+<path-to-Scoop>\bin\checkver.ps1 -App tron-iptv -Dir bucket -Update -Version 1.2.3
+```
+
+**winget** publishes through pull requests to [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs) as `ArmendZekjiri.TronIPTV`. The `winget` job uses [WinGet Releaser](https://github.com/vedantmgoyal9/winget-releaser), which can only update a package that already exists. The first version must be submitted by hand. One-time setup:
+
+1. Fork [microsoft/winget-pkgs](https://github.com/microsoft/winget-pkgs) to the `armendzekjiri` account. The job opens its pull requests from that fork.
+2. Create a **classic** personal access token (fine-grained tokens are not supported) at <https://github.com/settings/tokens>. Give it the `public_repo` scope and the `workflow` scope; `workflow` lets the action sync the fork when upstream workflow files change. Choose an expiry you will remember to renew.
+3. Add it as a repository secret named `WINGET_TOKEN` (**Settings → Secrets and variables → Actions → New repository secret**). Without the secret, the job skips with a notice instead of failing.
+4. Submit the first version and wait for a moderator to merge it. The reviewed seed manifests for 0.1.0 are in [`packaging/winget/0.1.0`](packaging/winget/0.1.0). Check them with `winget validate --manifest packaging/winget/0.1.0`, then submit them with [wingetcreate](https://github.com/microsoft/winget-create):
+
+   ```powershell
+   winget install Microsoft.WingetCreate
+   wingetcreate submit --prtitle "New package: ArmendZekjiri.TronIPTV version 0.1.0" packaging/winget/0.1.0
+   ```
+
+   It prompts for a GitHub sign-in. Don't pass the token with `--token`, because it can end up in logs.
+
+   To seed a newer stable version instead, copy the folder, then update `PackageVersion`, `InstallerUrl`, `InstallerSha256` (from `SHA256SUMS.txt`), `ReleaseDate` and `ReleaseNotesUrl`.
+5. GitHub pre-releases are skipped, and every `0.x` version counts as one. winget moderators prefer stable versions. To submit pre-releases too, add a repository **variable** (not a secret) named `WINGET_INCLUDE_PRERELEASES` with the value `true`.
+
+After that, each release opens a winget-pkgs pull request automatically. It inherits the installer type (`inno`), per-user scope and silent switches from the previous version's manifest. The validation bot and moderators usually merge it within a day or two; watch the pull request for review comments.
 
 ## License
 

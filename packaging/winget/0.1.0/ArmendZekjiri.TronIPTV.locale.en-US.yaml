@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.10.0.schema.json
+
+PackageIdentifier: ArmendZekjiri.TronIPTV
+PackageVersion: 0.1.0
+PackageLocale: en-US
+Publisher: TronIPTV contributors
+PublisherUrl: https://github.com/armendzekjiri/TronIPTV
+PublisherSupportUrl: https://github.com/armendzekjiri/TronIPTV/issues
+PackageName: TronIPTV
+PackageUrl: https://github.com/armendzekjiri/TronIPTV
+License: GPL-3.0-or-later
+LicenseUrl: https://github.com/armendzekjiri/TronIPTV/blob/main/LICENSE
+Copyright: Copyright (C) 2026 TronIPTV contributors
+ShortDescription: A fast, modern, open-source IPTV player for Windows.
+Description: |-
+  TronIPTV plays Xtream Codes, M3U/M3U8 and local M3U playlists with an XMLTV TV guide, a poster grid for movies and series, favorites and recently watched lists.
+  Playback uses libVLC with hardware decoding. Libraries are saved locally for instant startup, and stored secrets are encrypted with Windows DPAPI. No telemetry.
+  TronIPTV is a media player only; it does not provide any channels, streams or playlists.
+Moniker: tron-iptv
+Tags:
+  - epg
+  - iptv
+  - libvlc
+  - m3u
+  - media-player
+  - streaming
+  - tv
+  - xmltv
+  - xtream-codes
+ReleaseNotesUrl: https://github.com/armendzekjiri/TronIPTV/releases/tag/v0.1.0
+ManifestType: defaultLocale
+ManifestVersion: 1.10.0

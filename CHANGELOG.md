@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- winget (`ArmendZekjiri.TronIPTV`) and Scoop (`tron-iptv` bucket in this repository) packages, updated automatically by the release workflow.
+
 ## [0.1.0] - 2026-10-19
 
 First public pre-release.
